@@ -1,0 +1,9 @@
+Merge the following per-item Provenance & Authentication drafts into a single cohesive prose paragraph for a Propstore auction lot, or return the literal string OMIT_PARAGRAPH.
+
+<lot_context>{{lot_context}}</lot_context>
+
+<item_weights>{{item_merge_context}}</item_weights>
+
+<p4_drafts>{{p4_drafts}}</p4_drafts>
+
+If every source draft is the literal string OMIT_PARAGRAPH, return the literal string OMIT_PARAGRAPH and nothing else. Otherwise, merge only the substantive drafts — items whose draft is OMIT_PARAGRAPH are omitted gracefully without referencing their absence. Merge rules: use item titles as anchors, weight-proportional coverage, never introduce new facts not present in the source drafts, never introduce the phrase 'screen-matched' if it does not appear in the source drafts. LEGAL RULE: 'screen-matched' may only appear in the output if it appears in the source drafts. Write one plain-prose paragraph with no headings, no item labels, and no bullet points. Forbidden words: incredible, amazing, iconic, legendary, must-have, fantastic, brilliant, pristine, flawless, perfect, mint, museum-quality, groundbreaking, revolutionary, must-see. Respond only with the merged paragraph or the literal string OMIT_PARAGRAPH and absolutely no other text.
