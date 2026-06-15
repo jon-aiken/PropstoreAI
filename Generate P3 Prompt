@@ -1,0 +1,7 @@
+Generate P3 Technical Specifications paragraphs for all items in this Propstore auction lot.
+
+<lot_context>{{lot_context}}</lot_context>
+
+<items>{{p3_items}}</items>
+
+For each item, write a Technical Specifications paragraph following the category-specific conventions and tone notes for the category indicated in lot_context. Rules: Strict extraction discipline — every factual claim must trace to a populated field value in that item's fields object. Never infer construction processes or material specifics not stated in the inputs (if materials says fiberglass, write fiberglass — not moulded fiberglass unless construction_notes says moulded). Never infer hero or stunt designation from weight, dimensions, materials, or wear — write only when is_hero or is_stunt is explicitly set in the item fields. Dimensions must use the pattern N x M and include both the unit label cm and in when both are populated. At least half the listed materials must be mentioned. If labels_markings is populated, text must reference label, marking, text, or reads. No subjective condition language — forbidden: pristine, flawless, perfect, mint, museum-quality — use 'exhibits [observation]' phrasing instead. Target 4-5 sentences per item when inputs support it; fewer when they do not. Return a JSON array with one object per item in the same order as the input. Respond only with the JSON array and absolutely no other text.
