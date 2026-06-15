@@ -1,0 +1,99 @@
+# Assemble Response
+
+## Overview
+
+**Assemble Response** is the final step in the copy generation workflow. It collects all paragraph variables produced by upstream steps, applies default substitutions for any paragraphs that were skipped or omitted, computes the total run duration, and writes a single serialised JSON envelope to the `response` variable for use by downstream steps or the workflow's output handler.
+
+This function makes no external API calls and has no side effects beyond setting `ai.vars.response`.
+
+---
+
+## How It Works
+
+1. **Parses the lot context** to extract the `lot_id` that anchors the response envelope.
+2. **Computes the run duration** in milliseconds by subtracting the recorded start timestamp from the current time.
+3. **Resolves the P2 paragraph** — if P2 generation was skipped by an eligibility gate, the upstream variable will be an empty string. This function detects that and substitutes the sentinel value `"OMIT_PARAGRAPH"` automatically.
+4. **Parses the draft arrays** for P3 and P4 (each is a JSON array string). If a parse fails for any reason, the function logs a warning and defaults to an empty array rather than failing the entire workflow.
+5. **Resolves the merged paragraphs** for P3 and P4. If either merged variable is an empty string (indicating a single-item lot where the merge step was skipped), the `merged` key is completely omitted from the corresponding section of the envelope — it is not set to `null` or any placeholder value.
+6. **Assembles the envelope object** and serialises it to a JSON string.
+7. **Sets `ai.vars.response`** to the serialised envelope string.
+
+---
+
+## Configuration Options
+
+### Response Assembly Inputs
+
+All inputs in this section accept workflow variables. You should map each field to the variable produced by the corresponding upstream step.
+
+| Field | Variable | Required | Description |
+|---|---|---|---|
+| **Lot Context** | `lot_context` | Yes | A JSON string containing at minimum a `lot_id` field. This is typically produced by the workflow's initialisation step. If this field is missing or malformed, the function will throw an error and halt. |
+| **P1 Paragraph** | `p1` | Yes | The generated P1 prose paragraph. Expected to always be a non-empty string. |
+| **P2 Paragraph** | `p2` | No | The generated P2 prose paragraph. If the P2 eligibility gate routed around generation, pass an empty string (or leave the variable unset) — the function will automatically substitute `"OMIT_PARAGRAPH"` in the output envelope. |
+| **P3 Drafts** | `p3_drafts` | No | A JSON array string of per-item P3 draft objects. If absent or unparseable, defaults to an empty array. |
+| **P4 Drafts** | `p4_drafts` | No | A JSON array string of per-item P4 draft objects. If absent or unparseable, defaults to an empty array. |
+| **P3 Merged** | `p3_merged` | No | The merged P3 prose paragraph for multi-item lots. Leave empty for single-item lots — the `merged` key will be entirely absent from the P3 section of the response envelope. |
+| **P4 Merged** | `p4_merged` | No | The merged P4 prose paragraph for multi-item lots. Leave empty for single-item lots — the `merged` key will be entirely absent from the P4 section of the response envelope. Pass `"OMIT_PARAGRAPH"` explicitly if the merge step ran but determined P4 should be suppressed. |
+| **Concerns** | `concerns` | No | A JSON array string of concern objects flagged by upstream validation steps. If absent or unparseable, defaults to an empty array. |
+| **Run Start Timestamp** | `run_start_ms` | Yes | A stringified Unix millisecond timestamp recorded at the very start of the workflow run. Used to compute `metadata.duration_ms` in the output envelope. |
+
+---
+
+## Output
+
+This function sets one variable:
+
+### `response` *(string)*
+
+A serialised JSON string containing the complete response envelope. The structure is as follows:
+
+```json
+{
+  "lot_id": "84201",
+  "p1": "...",
+  "p2": "...",
+  "p3": {
+    "drafts": [ ... ],
+    "merged": "..."
+  },
+  "p4": {
+    "drafts": [ ... ],
+    "merged": "..."
+  },
+  "concerns": [ ... ],
+  "metadata": {
+    "duration_ms": 4821
+  }
+}
+```
+
+**Notes on the envelope structure:**
+
+- `p2` will be the literal string `"OMIT_PARAGRAPH"` if the P2 generation step was skipped.
+- `p3.merged` and `p4.merged` will be **absent** (not null) when the lot is single-item and the merge step was not run.
+- `p4.merged` may be `"OMIT_PARAGRAPH"` if the merge step ran but determined P4 content should be suppressed.
+- `metadata.duration_ms` is the total elapsed time in milliseconds from `run_start_ms` to the moment this function executed.
+
+---
+
+## Error Handling
+
+| Condition | Behaviour |
+|---|---|
+| `lot_context` is missing or not valid JSON | **Hard failure** — throws an error and halts the workflow. `lot_id` is structurally required. |
+| `run_start_ms` is not a valid integer string | **Hard failure** — throws an error and halts the workflow. |
+| `p3_drafts`, `p4_drafts`, or `concerns` fail to parse | **Soft failure** — logs a warning and defaults to `[]`. The workflow continues with a degraded but valid envelope. |
+| A parsed array field is valid JSON but not an array | **Soft failure** — defaults to `[]` and logs a warning. |
+
+---
+
+## Tips & Common Pitfalls
+
+- **P2 skipped vs. P2 omitted:** If the P2 eligibility gate routed around generation entirely, the `p2` workflow variable will be unset, which resolves to an empty string `""` in this function's configuration. This is the correct signal — do not pass the string `"OMIT_PARAGRAPH"` manually from the gate; simply leave the variable unmapped or pass the empty variable reference.
+
+- **Single-item lots:** For lots with only one item, leave both `p3_merged` and `p4_merged` unmapped or pass empty variable references. The `merged` key will be cleanly absent from the serialised output — downstream consumers should check for the presence of the key rather than checking for a null or placeholder value.
+
+- **`response` is always a string:** The output variable is a JSON string, not a parsed object. Any downstream step that needs to work with individual fields will need to parse it first.
+
+- **Timestamp format:** `run_start_ms` must be a plain integer string representing Unix milliseconds (e.g. `"1720441823004"`). ISO date strings or other formats are not supported and will cause a hard failure.
