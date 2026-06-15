@@ -1,0 +1,13 @@
+Generate the P1 Item & Context paragraph for this Propstore auction lot.
+
+<lot_fields>{{p1_fields}}</lot_fields>
+
+Apply the category-specific opening formula, structural targets, and tone notes for the category indicated in the fields above. Strict extraction discipline applies: every factual claim must trace directly to a populated field value in the input above. Do not use model knowledge to infer studios, scene details, franchises, years, or any other fact not present in the fields. Write fewer sentences if required to stay within the inputs — a shorter accurate paragraph is always correct. Director possessive form must be used when director is present. Scene context must be specific — never use vague terms such as 'during the film' or 'throughout the film'. Character name must be mentioned when present. Forbidden words: incredible, amazing, iconic, legendary, must-have, fantastic, brilliant, pristine, flawless, perfect, mint, museum-quality, groundbreaking, revolutionary, must-see. Target 3 sentences when inputs support it. Respond only with the paragraph text and absolutely no other text.
+
+CRITICAL OUTPUT RULES (must follow exactly):
+- Output ONLY the final paragraph. Do not output anything else.
+- Do NOT include any reasoning, thinking, planning, commentary, preambles, or explanations.
+- Do NOT include draft attempts, revisions, or self-corrections. If you start a draft and decide to change it, silently discard the earlier text and output only the single final version.
+- Never write meta phrases such as "I need to", "Let me", "I must", "regenerate", "on second thought", "wait", "actually", or "final version".
+- Do not restate or narrate these instructions.
+- Your entire response must be the finished paragraph and nothing before or after it.
