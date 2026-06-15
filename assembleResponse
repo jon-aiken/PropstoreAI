@@ -1,0 +1,96 @@
+// Step 1 — Parse lot_context and extract lot_id
+let lotContext;
+try {
+  lotContext = typeof ai.config.lot_context === 'string' ? JSON.parse(ai.config.lot_context) : ai.config.lot_context;
+} catch (e) {
+  throw new Error("assembleResponse: failed to parse lot_context JSON");
+}
+
+const lotId = lotContext.lot_id;
+console.log(`assembleResponse: starting assembly for lot_id=${lotId}, run_start_ms=${ai.config.run_start_ms}`);
+
+// Step 2 — Compute duration_ms
+const durationMs = Date.now() - parseInt(ai.config.run_start_ms, 10);
+if (isNaN(durationMs)) {
+  throw new Error("assembleResponse: run_start_ms is not a valid integer string");
+}
+console.log(`assembleResponse: duration_ms=${durationMs}`);
+
+// Step 3 — Resolve p2 (empty string means skip branch was taken)
+const p2 = ai.config.p2 === "" ? "OMIT_PARAGRAPH" : ai.config.p2;
+if (ai.config.p2 === "") {
+  console.log("assembleResponse: p2 was empty string — substituted OMIT_PARAGRAPH");
+} else {
+  console.log("assembleResponse: p2 used as-is");
+}
+
+// Step 4 — Parse p3_drafts, p4_drafts, concerns
+let p3Drafts = [];
+try {
+  const parsed = typeof ai.config.p3_drafts === 'string' ? JSON.parse(ai.config.p3_drafts) : ai.config.p3_drafts;
+  p3Drafts = Array.isArray(parsed) ? parsed : [];
+  if (!Array.isArray(parsed)) {
+    console.log("assembleResponse: p3_drafts parsed but was not an array — defaulting to []");
+  }
+} catch (e) {
+  console.log("assembleResponse: failed to parse p3_drafts — defaulting to []");
+}
+console.log(`assembleResponse: p3_drafts item count=${p3Drafts.length}`);
+
+let p4Drafts = [];
+try {
+  const parsed = typeof ai.config.p4_drafts === 'string' ? JSON.parse(ai.config.p4_drafts) : ai.config.p4_drafts;
+  p4Drafts = Array.isArray(parsed) ? parsed : [];
+  if (!Array.isArray(parsed)) {
+    console.log("assembleResponse: p4_drafts parsed but was not an array — defaulting to []");
+  }
+} catch (e) {
+  console.log("assembleResponse: failed to parse p4_drafts — defaulting to []");
+}
+console.log(`assembleResponse: p4_drafts item count=${p4Drafts.length}`);
+
+let concerns = [];
+try {
+  const parsed = typeof ai.config.concerns === 'string' ? JSON.parse(ai.config.concerns) : ai.config.concerns;
+  concerns = Array.isArray(parsed) ? parsed : [];
+  if (!Array.isArray(parsed)) {
+    console.log("assembleResponse: concerns parsed but was not an array — defaulting to []");
+  }
+} catch (e) {
+  console.log("assembleResponse: failed to parse concerns — defaulting to []");
+}
+console.log(`assembleResponse: concerns item count=${concerns.length}`);
+
+// Step 5 — Resolve p3_merged and p4_merged (empty string means single-item lot, omit the key)
+const p3Merged = ai.config.p3_merged === "" ? undefined : ai.config.p3_merged;
+const p4Merged = ai.config.p4_merged === "" ? undefined : ai.config.p4_merged;
+
+// Step 6 — Build the envelope object
+const p3Object = {
+  drafts: p3Drafts,
+  ...(p3Merged !== undefined && { merged: p3Merged })
+};
+
+const p4Object = {
+  drafts: p4Drafts,
+  ...(p4Merged !== undefined && { merged: p4Merged })
+};
+
+const envelope = {
+  lot_id: lotId,
+  p1: ai.config.p1,
+  p2: p2,
+  p3: p3Object,
+  p4: p4Object,
+  concerns: concerns,
+  metadata: {
+    duration_ms: durationMs
+  }
+};
+
+// Step 7 — Serialise and set variable
+const serialised = JSON.stringify(envelope);
+console.log(`assembleResponse: envelope keys=[${Object.keys(envelope).join(", ")}], serialised length=${serialised.length} chars`);
+
+ai.vars.response = serialised;
+console.log("assembleResponse: ai.vars.response set successfully");
