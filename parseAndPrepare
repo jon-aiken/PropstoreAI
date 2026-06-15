@@ -1,0 +1,197 @@
+const run_start_ms = String(Date.now());
+
+// ─── Requirements Matrix ───────────────────────────────────────────────────────
+const REQUIREMENTS_MATRIX = {
+  "Props": {
+    p1: ["item_title", "movie_title", "tv_show_title", "director", "character_name", "character_actor", "scene_context", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "director", "studio", "awards", "box_office", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "weight_kg", "condition_grade", "condition_notes", "labels_markings", "colours", "size_label"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "screen_matched_evidence", "photo_matched_evidence", "is_hero", "is_stunt", "maker", "designer", "acquisition_date"]
+  },
+  "Costumes": {
+    p1: ["item_title", "movie_title", "tv_show_title", "director", "character_name", "character_actor", "scene_context", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "director", "studio", "awards", "box_office", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "labels_markings", "colours", "size_label"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "screen_matched_evidence", "photo_matched_evidence", "is_hero", "is_stunt", "maker", "designer", "acquisition_date"]
+  },
+  "Original Artwork": {
+    p1: ["item_title", "movie_title", "tv_show_title", "director", "character_name", "character_actor", "scene_context", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "director", "studio", "awards", "box_office", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "colours", "edition_number", "edition_size"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "screen_matched_evidence", "photo_matched_evidence", "maker", "designer", "acquisition_date"]
+  },
+  "Posters": {
+    p1: ["item_title", "movie_title", "tv_show_title", "director", "character_name", "character_actor", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "director", "studio", "awards", "box_office", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "colours", "edition_number", "edition_size"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "maker", "designer", "acquisition_date"]
+  },
+  "Toys & Collectibles": {
+    p1: ["item_title", "movie_title", "tv_show_title", "character_name", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "studio", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "labels_markings", "colours", "edition_number", "edition_size"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "maker", "designer", "acquisition_date"]
+  },
+  "Production Materials and Crew Items": {
+    p1: ["item_title", "movie_title", "tv_show_title", "director", "character_name", "character_actor", "scene_context", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "director", "studio", "awards", "box_office", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "labels_markings"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "screen_matched_evidence", "photo_matched_evidence", "maker", "designer", "acquisition_date"]
+  },
+  "Autographs": {
+    p1: ["item_title", "movie_title", "tv_show_title", "character_name", "character_actor", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "studio", "cultural_significance_notes"],
+    p3: ["materials", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "colours"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "acquisition_date"]
+  },
+  "Music": {
+    p1: ["item_title", "movie_title", "tv_show_title", "character_name", "character_actor", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "studio", "awards", "box_office", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "labels_markings", "colours", "edition_number", "edition_size"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "screen_matched_evidence", "photo_matched_evidence", "maker", "designer", "acquisition_date"]
+  },
+  "Promotional Items": {
+    p1: ["item_title", "movie_title", "tv_show_title", "character_name", "item_variant", "item_category", "franchise", "year", "genre", "studio"],
+    p2: ["year", "franchise", "genre", "movie_title", "tv_show_title", "studio", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "labels_markings", "colours", "edition_number", "edition_size"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "maker", "acquisition_date"]
+  },
+  "Propstore Merch": {
+    p1: ["item_title", "item_variant", "item_category", "year"],
+    p2: ["year", "cultural_significance_notes"],
+    p3: ["materials", "construction_notes", "dimensions_metric", "dimensions_imperial", "condition_grade", "condition_notes", "colours", "size_label", "edition_number", "edition_size"],
+    p4: ["provenance_source", "chain_of_custody", "certificates", "acquisition_date"]
+  }
+};
+
+// ─── Helper: strip field metadata to value-only flat map ──────────────────────
+const stripFields = (rawFields) => {
+  const flat = {};
+  for (const [key, fieldObj] of Object.entries(rawFields)) {
+    if (fieldObj && typeof fieldObj.value === "string") {
+      flat[key] = fieldObj.value;
+    }
+  }
+  return flat;
+};
+
+// ─── Helper: build a filtered fields object from a flat map and an allowed list ─
+const filterFields = (flatFields, allowedList) => {
+  const result = {};
+  for (const fieldName of allowedList) {
+    const val = flatFields[fieldName];
+    if (val !== undefined && val !== "") {
+      result[fieldName] = val;
+    }
+  }
+  return result;
+};
+
+// ─── Step 1: Parse the payload ────────────────────────────────────────────────
+console.log("parseAndPrepare: Parsing payload...");
+
+let payload;
+try {
+  payload = typeof ai.config.payload === 'string' ? JSON.parse(ai.config.payload) : ai.config.payload;
+} catch (err) {
+  throw new Error(`parseAndPrepare: Failed to parse payload JSON — ${err.message}`);
+}
+
+if (!Array.isArray(payload.items)) {
+  throw new Error("parseAndPrepare: payload.items is missing or not an array");
+}
+
+// ─── Step 2: Strip lot_fields and extract category / estimate values ───────────
+const flatLotFields = stripFields(payload.lot_fields || {});
+
+const category = flatLotFields["item_category"] || "";
+if (!category) {
+  throw new Error("parseAndPrepare: item_category field is missing or empty in lot_fields");
+}
+
+const estimateMin = flatLotFields["estimate_min"] || "";
+const estimateMax = flatLotFields["estimate_max"] || "";
+const estimateCurrency = flatLotFields["estimate_currency"] || "";
+
+console.log(`parseAndPrepare: lot_id=${payload.lot_id}, category=${category}, items=${payload.items.length}`);
+
+// ─── Step 3: Validate category against matrix ─────────────────────────────────
+if (!REQUIREMENTS_MATRIX[category]) {
+  throw new Error(`parseAndPrepare: No matrix entry found for category '${category}'`);
+}
+
+const categoryMatrix = REQUIREMENTS_MATRIX[category];
+
+// ─── Step 4: Build P1 and P2 lot-level field sets ─────────────────────────────
+const p1Fields = filterFields(flatLotFields, categoryMatrix.p1);
+const p2Fields = filterFields(flatLotFields, categoryMatrix.p2);
+
+console.log(`parseAndPrepare: P1 fields extracted: ${Object.keys(p1Fields).length} fields`);
+console.log(`parseAndPrepare: P2 fields extracted: ${Object.keys(p2Fields).length} fields`);
+
+// ─── Step 5: Compute p2_eligible ─────────────────────────────────────────────
+const P2_INELIGIBLE_CATEGORIES = new Set(["Toys & Collectibles", "Autographs", "Propstore Merch"]);
+const estimateMinNum = parseFloat(estimateMin || "0") || 0;
+const p2_eligible = (!P2_INELIGIBLE_CATEGORIES.has(category) && estimateMinNum >= 10000) ? "true" : "false";
+
+console.log(`parseAndPrepare: p2_eligible=${p2_eligible} (estimate_min=${estimateMin}, category=${category})`);
+
+// ─── Step 6: Build per-item P3 and P4 field sets ──────────────────────────────
+const p3Items = [];
+const p4Items = [];
+const itemMergeContext = [];
+
+for (const item of payload.items) {
+  const flatItemFields = stripFields(item.item_fields || {});
+  const itemTitle = (flatItemFields["item_title"] && flatItemFields["item_title"] !== "")
+    ? flatItemFields["item_title"]
+    : `Item ${item.item_id}`;
+  const weight = (item.weight != null && !isNaN(item.weight)) ? item.weight : 1.0;
+
+  const p3Fields = filterFields(flatItemFields, categoryMatrix.p3);
+  const p4Fields = filterFields(flatItemFields, categoryMatrix.p4);
+
+  p3Items.push({
+    item_id: item.item_id,
+    item_title: itemTitle,
+    weight: weight,
+    fields: p3Fields
+  });
+
+  p4Items.push({
+    item_id: item.item_id,
+    item_title: itemTitle,
+    weight: weight,
+    fields: p4Fields
+  });
+
+  itemMergeContext.push({
+    item_id: item.item_id,
+    item_title: itemTitle,
+    weight: weight
+  });
+}
+
+console.log(`parseAndPrepare: P3/P4 items built: ${p3Items.length} items`);
+
+// ─── Step 7: Build lot_context ────────────────────────────────────────────────
+const lotContext = {
+  lot_id: payload.lot_id,
+  category: category,
+  estimate_min: estimateMin,
+  estimate_max: estimateMax,
+  estimate_currency: estimateCurrency
+};
+
+// ─── Step 8: Set all output variables ────────────────────────────────────────
+ai.vars.lot_context        = JSON.stringify(lotContext);
+ai.vars.p1_fields          = JSON.stringify(p1Fields);
+ai.vars.p2_fields          = JSON.stringify(p2Fields);
+ai.vars.p2_eligible        = p2_eligible;
+ai.vars.p3_items           = JSON.stringify(p3Items);
+ai.vars.p4_items           = JSON.stringify(p4Items);
+ai.vars.item_merge_context = JSON.stringify(itemMergeContext);
+ai.vars.item_count         = String(payload.items.length);
+ai.vars.run_start_ms       = run_start_ms;
+
+console.log(`parseAndPrepare: All variables set. run_start_ms=${run_start_ms}`);
