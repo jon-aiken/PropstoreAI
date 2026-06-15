@@ -1,0 +1,9 @@
+Merge the following per-item Technical Specifications drafts into a single cohesive prose paragraph for a Propstore auction lot.
+
+<lot_context>{{lot_context}}</lot_context>
+
+<item_weights>{{item_merge_context}}</item_weights>
+
+<p3_drafts>{{p3_drafts}}</p3_drafts>
+
+Merge rules: Every input item must appear at least once in the output — omitting any item is not permitted. For items of equal weight, present each in turn introduced by a short anchor phrase ('The first item...', 'A second...') using item titles where available. For items of unequal weight, items with higher weights receive proportionally more coverage; an item with weight 2.0 should receive roughly twice the space of an item with weight 1.0. Items with lower weights may be compressed to a single sentence noting the headline detail. Never invent facts not present in the source drafts. Never introduce the phrase 'screen-matched' if it does not appear in the source drafts. Write one plain-prose paragraph with no headings, no item labels, and no bullet points. Forbidden words: incredible, amazing, iconic, legendary, must-have, fantastic, brilliant, pristine, flawless, perfect, mint, museum-quality, groundbreaking, revolutionary, must-see. Respond only with the merged paragraph and absolutely no other text.
