@@ -1,0 +1,235 @@
+# Parse & Prepare
+
+## Overview
+
+**Parse & Prepare** is the first step in the lot content generation workflow. It receives the raw JSON payload from the harness, strips all field metadata (confidence scores, source annotations), applies a hardcoded requirements matrix to produce category-appropriate field sets, computes eligibility flags, and publishes all derived variables for every downstream generation step to consume.
+
+This function performs no content generation and makes no external API calls. It is a pure data transformation and routing step.
+
+---
+
+## How It Works
+
+1. **Parses** the raw JSON payload string provided via configuration.
+2. **Strips metadata** from every field object — discarding `confidence` and `source` and retaining only the `value` string.
+3. **Identifies the lot category** from `item_category` in the lot-level fields and validates it against the requirements matrix.
+4. **Applies the requirements matrix** — a hardcoded lookup table that defines exactly which fields are relevant for each of the four paragraph types (P1–P4) within each of the 10 supported categories.
+5. **Builds lot-level field sets** (P1 and P2) from `lot_fields`.
+6. **Builds per-item field sets** (P3 and P4) from each item's `item_fields`.
+7. **Computes `p2_eligible`** based on the lot's estimated minimum value and category.
+8. **Sets all output variables** on `ai.vars` as JSON strings for downstream steps.
+
+Fields that are present in the matrix but absent or empty in the payload are silently omitted — the function never includes blank values in any output field set.
+
+---
+
+## Configuration
+
+### Payload Input
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| **Raw Payload** | Input Variable | Yes | The raw JSON string posted by the harness. In production, set this to `{{payload}}` (the workflow launch variable). During testing, paste a complete example payload JSON string directly into this field. |
+
+> **Note:** This is the only configuration input. All other logic — the requirements matrix, eligibility thresholds, field stripping rules — is hardcoded inside the function and requires no user configuration.
+
+---
+
+## Supported Categories
+
+The requirements matrix covers the following 10 category values. The value of `item_category` in the payload must match one of these exactly (case-sensitive):
+
+- `Props`
+- `Costumes`
+- `Original Artwork`
+- `Posters`
+- `Toys & Collectibles`
+- `Production Materials and Crew Items`
+- `Autographs`
+- `Music`
+- `Promotional Items`
+- `Propstore Merch`
+
+If the payload contains a category not in this list, the function will throw an error and halt the workflow.
+
+---
+
+## Outputs
+
+All outputs are set as string variables on `ai.vars`. JSON-structured outputs are serialised strings — downstream steps should parse them with `JSON.parse` before use.
+
+### `lot_context`
+**Type:** JSON string
+
+A summary of the lot's identity and estimate values.
+
+```json
+{
+  "lot_id": "84201",
+  "category": "Props",
+  "estimate_min": "15000",
+  "estimate_max": "20000",
+  "estimate_currency": "USD"
+}
+```
+
+---
+
+### `p1_fields`
+**Type:** JSON string
+
+A flat key/value map of lot-level fields filtered to those permitted for **Paragraph 1** (item identification and production context) under the lot's category. Drawn from `lot_fields`. Empty-value fields are excluded.
+
+```json
+{
+  "item_title": "James Bond stunt pistol and holster",
+  "movie_title": "Die Another Day",
+  "character_name": "James Bond",
+  "character_actor": "Pierce Brosnan"
+}
+```
+
+---
+
+### `p2_fields`
+**Type:** JSON string
+
+A flat key/value map of lot-level fields filtered to those permitted for **Paragraph 2** (cultural and production significance) under the lot's category. Drawn from `lot_fields`. Empty-value fields are excluded.
+
+```json
+{
+  "year": "2002",
+  "franchise": "James Bond",
+  "genre": "action thriller",
+  "studio": "EON Productions"
+}
+```
+
+---
+
+### `p2_eligible`
+**Type:** String (`"true"` or `"false"`)
+
+Indicates whether this lot qualifies for a Paragraph 2 cultural significance section. A lot is eligible when **both** of the following are true:
+
+- The category is **not** one of: `Toys & Collectibles`, `Autographs`, `Propstore Merch`
+- The `estimate_min` value is **≥ 10,000** (in whatever currency is specified)
+
+If `estimate_min` is absent or unparseable, the lot is treated as ineligible.
+
+---
+
+### `p3_items`
+**Type:** JSON string (array)
+
+An array of per-item objects, each containing the item's physical and technical specification fields filtered to those permitted for **Paragraph 3** under the lot's category. Drawn from each item's `item_fields`.
+
+```json
+[
+  {
+    "item_id": "91044",
+    "item_title": "Stunt pistol",
+    "weight": 2.0,
+    "fields": {
+      "materials": "cast zinc alloy",
+      "condition_grade": "Fine",
+      "dimensions_metric": "28 x 12 x 4 cm"
+    }
+  }
+]
+```
+
+The `weight` value reflects the item's relative weight as provided by the harness (defaulting to `1.0` if absent). It is available for downstream steps that need to weight or prioritise items during merge.
+
+---
+
+### `p4_items`
+**Type:** JSON string (array)
+
+An array of per-item objects, each containing the item's provenance and authentication fields filtered to those permitted for **Paragraph 4** under the lot's category. Drawn from each item's `item_fields`. Same shape as `p3_items`.
+
+```json
+[
+  {
+    "item_id": "91044",
+    "item_title": "Stunt pistol",
+    "weight": 2.0,
+    "fields": {
+      "provenance_source": "EON Productions",
+      "chain_of_custody": "From the personal collection of stunt coordinator Gary Powell",
+      "certificates": "LOA from EON Productions",
+      "photo_matched_evidence": "Matches frame 01:14:22 of theatrical cut",
+      "is_stunt": "true",
+      "maker": "Independent armourer",
+      "acquisition_date": "2019"
+    }
+  }
+]
+```
+
+---
+
+### `item_merge_context`
+**Type:** JSON string (array)
+
+A lightweight array of item identity and weight objects, used by downstream merge steps to understand the composition of the lot without needing to load the full P3/P4 field sets.
+
+```json
+[
+  { "item_id": "91044", "item_title": "Stunt pistol", "weight": 2.0 },
+  { "item_id": "91045", "item_title": "Holster", "weight": 1.0 }
+]
+```
+
+If an item has no `item_title` value in its fields, the title falls back to `"Item <item_id>"`.
+
+---
+
+### `item_count`
+**Type:** String
+
+The total number of items in the lot, as a plain string.
+
+```
+"2"
+```
+
+---
+
+### `run_start_ms`
+**Type:** String
+
+A Unix timestamp (milliseconds) captured at the very start of function execution. Used by downstream steps to calculate total workflow run duration or to timestamp outputs.
+
+```
+"1718012345678"
+```
+
+---
+
+## Error Conditions
+
+The function will throw a descriptive error and halt the workflow if any of the following occur:
+
+| Condition | Error |
+|---|---|
+| The payload is not valid JSON | `parseAndPrepare: Failed to parse payload JSON — <detail>` |
+| `payload.items` is missing or not an array | `parseAndPrepare: payload.items is missing or not an array` |
+| `item_category` is missing or empty in `lot_fields` | `parseAndPrepare: item_category field is missing or empty in lot_fields` |
+| The category value is not found in the requirements matrix | `parseAndPrepare: No matrix entry found for category '<value>'` |
+
+---
+
+## Console Output
+
+The function emits the following log messages during execution, visible in the workflow run log:
+
+```
+parseAndPrepare: Parsing payload...
+parseAndPrepare: lot_id=84201, category=Props, items=2
+parseAndPrepare: P1 fields extracted: 9 fields
+parseAndPrepare: P2 fields extracted: 6 fields
+parseAndPrepare: p2_eligible=true (estimate_min=15000, category=Props)
+parseAndPrepare: P3/P4 items built: 2 items
+parseAndPrepare: All variables set. run_start_ms=1718012345678
+```
