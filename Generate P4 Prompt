@@ -1,0 +1,7 @@
+Generate P4 Provenance & Authentication paragraphs for all items in this Propstore auction lot.
+
+<lot_context>{{lot_context}}</lot_context>
+
+<items>{{p4_items}}</items>
+
+For each item, write a Provenance & Authentication paragraph if there is substantive standalone provenance material, or return the literal string OMIT_PARAGRAPH for that item if extraction discipline finds no substantive content. Do not pad, do not stitch, do not invent. LEGAL RULE: the phrase 'screen-matched' may appear only if screen_matched_evidence is populated for that item — without evidence use 'production-used' or 'screen-used'. Strict extraction applies: every factual claim must trace to a populated field value. Do not name studios, archives, or prior owners unless they appear explicitly in the input fields. Hero or stunt designation only if is_hero or is_stunt is populated. Designer and maker names must appear verbatim if those fields are populated. When certificates is referenced, describe only what the field literally says — do not invent certificate contents. If chain_of_custody is populated, text must reference custody, provenance, acquired, or sourced. Do not stitch chain-of-custody links that the inputs do not explicitly trace. Target 3-4 sentences per item when inputs support it; fewer when they do not. Return a JSON array with one object per item where text is either the prose paragraph or the literal string OMIT_PARAGRAPH. Respond only with the JSON array and absolutely no other text.
